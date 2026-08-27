@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- SEO Meta Tags for Google Indexing -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA | Modern Fashion & Apparel Store</title>
+    <meta name="description" content="Buy and sell premium streetwear, hoodies, t-shirts, and fashion apparel at AURA. Secure GCash & Paymongo payments.">
+    <meta name="keywords" content="clothing store, streetwear, buy clothes, sell apparel, fashion marketplace">
+    <meta property="og:title" content="AURA Apparel Marketplace">
+    <meta property="og:description" content="Premium everyday streetwear marketplace. Buy and sell high-quality fashion.">
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* Design Principles Implementation */
+        :root {
+            --primary: #111111; /* High Contrast Dark */
+            --accent: #2563eb;  /* Accent Blue */
+            --bg: #fdfdfd;      /* Off-white Background for Whitespace */
+            --card-bg: #ffffff;
+            --text-muted: #666666;
+            --border: #e5e5e5;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg); color: var(--primary); line-height: 1.6; }
+
+        /* 1. Header & Navigation */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 8%; background: var(--card-bg); border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .logo { font-size: 1.6rem; font-weight: 900; letter-spacing: 3px; }
+        nav { display: flex; gap: 24px; align-items: center; }
+        nav a { text-decoration: none; color: var(--primary); font-weight: 500; font-size: 0.95rem; transition: color 0.2s; }
+        nav a:hover { color: var(--accent); }
+
+        /* Buttons & Contrast */
+        .btn {
+            background: var(--primary); color: #fff; border: none; padding: 10px 20px;
+            border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: background 0.2s;
+        }
+        .btn:hover { background: #333; }
+        .btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+        .btn-outline:hover { background: var(--primary); color: #fff; }
+
+        /* 2. Hero Section - Rule of Thirds (Grid 1/3 text, 2/3 imagery focus) */
+        .hero {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;
+            padding: 80px 8%; background: #000; color: #fff;
+        }
+        .hero-text h1 { font-size: 3.2rem; font-weight: 800; line-height: 1.1; margin-bottom: 16px; }
+        .hero-text p { color: #aaa; font-size: 1.1rem; margin-bottom: 28px; }
+
+        /* Layout & Generous Whitespace */
+        .container { max-width: 1200px; margin: 60px auto; padding: 0 20px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .section-title { font-size: 1.8rem; font-weight: 800; }
+
+        /* Product Cards */
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 30px; }
+        .product-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .product-image { width: 100%; height: 300px; object-fit: cover; }
+        .product-info { padding: 18px; }
+        .category { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; }
+        .title { font-size: 1.1rem; font-weight: 700; margin: 6px 0; }
+        .price-row { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+        .price { font-size: 1.25rem; font-weight: 800; }
+
+        /* Dashboard Views */
+        .dashboard-panel { display: none; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 30px; margin-bottom: 40px; }
+        .dashboard-panel.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; font-size: 0.9rem; }
+        th { background: #f5f5f5; }
+
+        /* Modals */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #fff; padding: 36px; border-radius: 8px; width: 400px; max-width: 90%; display: flex; flex-direction: column; gap: 14px; }
+        .modal-content input, .modal-content select, .modal-content textarea { padding: 12px; border: 1px solid var(--border); border-radius: 6px; }
+
+        /* Reviews Section */
+        .reviews-section { margin-top: 80px; background: #fff; padding: 40px; border-radius: 8px; border: 1px solid var(--border); }
+        .review-card { padding: 16px 0; border-bottom: 1px solid var(--border); }
+        .stars { color: #f59e0b; }
+
+        /* Footer & Sitemap */
+        footer { background: var(--primary); color: #888; padding: 60px 8% 30px; margin-top: 100px; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+        .footer-brand h3 { color: #fff; font-size: 1.4rem; margin-bottom: 12px; }
+        .sitemap-col h4 { color: #fff; font-size: 1rem; margin-bottom: 14px; }
+        .sitemap-col ul { list-style: none; }
+        .sitemap-col ul li { margin-bottom: 8px; }
+        .sitemap-col ul li a { color: #888; text-decoration: none; font-size: 0.9rem; }
+        .sitemap-col ul li a:hover { color: #fff; }
+        .footer-bottom { text-align: center; border-top: 1px solid #222; padding-top: 20px; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+    <!-- Header & Nav Links -->
+    <header>
+        <div class="logo">AURA</div>
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#store">Store Page</a>
+            <a href="#about">About Us</a>
+            <a href="#contacts">Contacts</a>
+            <a href="#dashboard" id="nav-dashboard" style="display:none;">Seller & Buyer Dashboard</a>
+        </nav>
+        <div>
+            <span id="user-display" style="font-size:0.85rem; margin-right:12px; font-weight:600;"></span>
+            <button id="auth-btn" class="btn btn-outline" onclick="openAuthModal()">Login / Register</button>
+        </div>
+    </header>
+
+    <!-- Hero Section with Call To Action (CTA) -->
+    <section class="hero" id="home">
+        <div class="hero-text">
+            <h1>Elevate Your Streetwear Game.</h1>
+            <p>Discover, buy, and sell authentic apparel from independent creators and brands.</p>
+            <button class="btn" style="padding:14px 28px; font-size:1rem;" onclick="scrollToStore()">Shop Collection</button>
+        </div>
+        <div>
+            <img src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=700" alt="Apparel Collection" style="width:100%; border-radius:8px;">
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="container">
+        
+        <!-- Seller Dashboard Panel (Post Product & Check Sales) -->
+        <section id="dashboard-panel" class="dashboard-panel">
+            <h2 class="section-title">Seller & Buyer Dashboard</h2>
+            
+            <div style="margin-top:20px; display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
+                <!-- Post Product Form -->
+                <div>
+                    <h3>Post New Apparel Item</h3>
+                    <form onsubmit="handlePostProduct(event)" style="display:flex; flex-direction:column; gap:12px; margin-top:15px;">
+                        <input type="text" id="prod-name" placeholder="Item Name (e.g. Oversized Hoodie)" required>
+                        <select id="prod-category" required>
+                            <option value="Tops">Tops / Tees</option>
+                            <option value="Outerwear">Outerwear / Jackets</option>
+                            <option value="Bottoms">Bottoms / Pants</option>
+                        </select>
+                        <select id="prod-size" required>
+                            <option value="S">Size S</option>
+                            <option value="M">Size M</option>
+                            <option value="L">Size L</option>
+                            <option value="XL">Size XL</option>
+                        </select>
+                        <input type="number" id="prod-price" placeholder="Price (PHP)" step="0.01" required>
+                        <input type="url" id="prod-image" placeholder="Image URL (Unsplash/Direct link)" required>
+                        <textarea id="prod-desc" placeholder="Product description..."></textarea>
+                        <button type="submit" class="btn">Publish Apparel Listing</button>
+                    </form>
+                </div>
+
+                <!-- History Section -->
+                <div>
+                    <h3>Sales History (Seller)</h3>
+                    <table id="sales-table">
+                        <thead><tr><th>Item</th><th>Amount</th><th>Status</th></tr></thead>
+                        <tbody><tr><td colspan="3">Log in to view sales</td></tr></tbody>
+                    </table>
+
+                    <h3 style="margin-top:30px;">Purchase History (Buyer)</h3>
+                    <table id="purchases-table">
+                        <thead><tr><th>Item</th><th>Amount</th><th>Status</th></tr></thead>
+                        <tbody><tr><td colspan="3">Log in to view purchases</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Store Page -->
+        <section id="store">
+            <div class="section-header">
+                <h2 class="section-title">Explore Store</h2>
+            </div>
+            <div id="product-grid" class="product-grid">
+                <p>Loading products...</p>
+            </div>
+        </section>
+
+        <!-- Features / Body Section -->
+        <section id="about" style="margin-top:80px; text-align:center;">
+            <h2 class="section-title">Why AURA Apparel?</h2>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:30px; margin-top:30px;">
+                <div style="padding:20px; background:#fff; border:1px solid var(--border); border-radius:8px;">
+                    <h3>Independent Sellers</h3>
+                    <p style="color:var(--text-muted); margin-top:8px;">Post your own clothing creations and earn directly through GCash payments.</p>
+                </div>
+                <div style="padding:20px; background:#fff; border:1px solid var(--border); border-radius:8px;">
+                    <h3>Verified Quality</h3>
+                    <p style="color:var(--text-muted); margin-top:8px;">Authentic reviews and star ratings from real buyers in the community.</p>
+                </div>
+                <div style="padding:20px; background:#fff; border:1px solid var(--border); border-radius:8px;">
+                    <h3>Instant Checkout</h3>
+                    <p style="color:var(--text-muted); margin-top:8px;">Powered by Paymongo with instant GCash and payment gateway options.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Customer Reviews & Ratings -->
+        <section class="reviews-section">
+            <h2 class="section-title">Community Ratings & Reviews</h2>
+            <form onsubmit="handleReviewSubmit(event)" style="margin-bottom:30px; display:flex; flex-direction:column; gap:10px; max-width:500px;">
+                <select id="rev-product-id" required>
+                    <option value="">Select Product to Review</option>
+                </select>
+                <select id="rev-rating" required>
+                    <option value="5">★★★★★ (5/5)</option>
+                    <option value="4">★★★★☆ (4/5)</option>
+                    <option value="3">★★★☆☆ (3/5)</option>
+                    <option value="2">★★☆☆☆ (2/5)</option>
+                    <option value="1">★☆☆☆☆ (1/5)</option>
+                </select>
+                <textarea id="rev-comment" placeholder="Write your review about the quality and fitting..." rows="3" required></textarea>
+                <button type="submit" class="btn">Submit Review</button>
+            </form>
+            <div id="reviews-list">Loading reviews...</div>
+        </section>
+
+    </main>
+
+    <!-- Footer with Sitemap -->
+    <footer id="contacts">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3>AURA STORE</h3>
+                <p>The modern apparel platform for buyers and fashion sellers.</p>
+            </div>
+            <div class="sitemap-col">
+                <h4>Navigation</h4>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#store">Store Page</a></li>
+                    <li><a href="#about">About Us</a></li>
+                </ul>
+            </div>
+            <div class="sitemap-col">
+                <h4>Sitemap</h4>
+                <ul>
+                    <li><a href="#dashboard">Seller Dashboard</a></li>
+                    <li><a href="#dashboard">Buyer Purchases</a></li>
+                    <li><a href="#contacts">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="sitemap-col">
+                <h4>Contact</h4>
+                <ul>
+                    <li>Email: support@aurastore.com</li>
+                    <li>Location: Philippines</li>
+                    <li>GCash Integrated</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 AURA Apparel Store. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Auth Modal (Registration with GCash Number) -->
+    <div id="auth-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="auth-title">Sign In / Register</h3>
+            <input type="email" id="auth-email" placeholder="Email Address" required>
+            <input type="password" id="auth-password" placeholder="Password" required>
+            <input type="text" id="auth-name" placeholder="Full Name (Registration)">
+            <input type="text" id="auth-gcash" placeholder="GCash Mobile Number (e.g. 09171234567)">
+            
+            <button class="btn" onclick="executeAuth('login')">Log In</button>
+            <button class="btn btn-outline" onclick="executeAuth('signup')">Register Account</button>
+            <button class="btn-outline" style="border:none; color:red; cursor:pointer;" onclick="closeAuthModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- AI Voiceflow Chatbot -->
+    <script type="text/javascript">
+      (function(d, t) {
+          var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+          v.onload = function() {
+            window.voiceflow.chat.load({
+              verify: { projectID: 'YOUR_VOICEFLOW_PROJECT_ID' },
+              url: 'https://general-runtime.voiceflow.com',
+              versionID: 'production'
+            });
+          }
+          v.src = "https://cdn.voiceflow.com/widget/bundle.mjs"; v.type = "text/javascript"; s.parentNode.insertBefore(v, s);
+      })(document, 'script');
+    </script>
+
+    <!-- Application Script -->
+    <script>
+        const SUPABASE_URL = "https://obooirfekigjiwqrovyk.supabase.co";
+        const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"; // Replace with your anon key
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+
+        async function init() {
+            const { data: { user } } = await supabase.auth.getUser();
+            currentUser = user;
+            updateUserInterface();
+            loadProducts();
+            loadReviews();
+        }
+
+        function scrollToStore() { document.getElementById('store').scrollIntoView({ behavior: 'smooth' }); }
+        function openAuthModal() { document.getElementById('auth-modal').style.display = 'flex'; }
+        function closeAuthModal() { document.getElementById('auth-modal').style.display = 'none'; }
+
+        async function executeAuth(mode) {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const full_name = document.getElementById('auth-name').value;
+            const gcash_number = document.getElementById('auth-gcash').value;
+
+            if (mode === 'signup') {
+                const { data, error } = await supabase.auth.signUp({
+                    email, password,
+                    options: { data: { full_name, gcash_number } }
+                });
+                if (error) alert(error.message);
+                else alert('Registration successful! Check your email to confirm registration.');
+            } else {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) alert(error.message);
+                else {
+                    currentUser = data.user;
+                    updateUserInterface();
+                    closeAuthModal();
+                }
+            }
+        }
+
+        function updateUserInterface() {
+            const userDisplay = document.getElementById('user-display');
+            const authBtn = document.getElementById('auth-btn');
+            const navDashboard = document.getElementById('nav-dashboard');
+            const dashboardPanel = document.getElementById('dashboard-panel');
+
+            if (currentUser) {
+                userDisplay.innerText = currentUser.email;
+                authBtn.innerText = 'Logout';
+                authBtn.onclick = async () => {
+                    await supabase.auth.signOut();
+                    currentUser = null;
+                    updateUserInterface();
+                };
+                navDashboard.style.display = 'inline-block';
+                dashboardPanel.classList.add('active');
+                loadHistories();
+            } else {
+                userDisplay.innerText = '';
+                authBtn.innerText = 'Login / Register';
+                authBtn.onclick = openAuthModal;
+                navDashboard.style.display = 'none';
+                dashboardPanel.classList.remove('active');
+            }
+        }
+
+        async function loadProducts() {
+            const grid = document.getElementById('product-grid');
+            const select = document.getElementById('rev-product-id');
+            const { data: products } = await supabase.from('products').select('*');
+
+            if (!products || products.length === 0) {
+                grid.innerHTML = '<p>No clothing items listed yet.</p>';
+                return;
+            }
+
+            select.innerHTML = '<option value="">Select Product to Review</option>' + 
+                products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+            grid.innerHTML = products.map(p => `
+                <div class="product-card">
+                    <img src="${p.image_url}" class="product-image" alt="${p.name}">
+                    <div class="product-info">
+                        <span class="category">${p.category} • Size ${p.size}</span>
+                        <h3 class="title">${p.name}</h3>
+                        <div class="price-row">
+                            <span class="price">₱${p.price}</span>
+                            <button class="btn" onclick="buyProduct('${p.id}', '${p.name}', ${p.price}, '${p.seller_id}')">Buy Now</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function handlePostProduct(e) {
+            e.preventDefault();
+            if (!currentUser) return alert('Please log in first.');
+
+            const name = document.getElementById('prod-name').value;
+            const category = document.getElementById('prod-category').value;
+            const size = document.getElementById('prod-size').value;
+            const price = parseFloat(document.getElementById('prod-price').value);
+            const image_url = document.getElementById('prod-image').value;
+            const description = document.getElementById('prod-desc').value;
+
+            const { error } = await supabase.from('products').insert([{
+                seller_id: currentUser.id, name, category, size, price, image_url, description
+            }]);
+
+            if (error) alert(error.message);
+            else {
+                alert('Apparel product published successfully!');
+                loadProducts();
+            }
+        }
+
+        async function buyProduct(productId, name, price, sellerId) {
+            if (!currentUser) return alert('Please log in to purchase.');
+
+            const res = await fetch('/api/pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: price,
+                    name: name,
+                    buyer_id: currentUser.id,
+                    seller_id: sellerId,
+                    product_id: productId
+                })
+            });
+
+            const data = await res.json();
+            if (data.checkout_url) {
+                window.location.href = data.checkout_url;
+            } else {
+                alert('Payment error: ' + data.error);
+            }
+        }
+
+        async function loadHistories() {
+            const { data: sales } = await supabase.from('orders').select('*, products(name)').eq('seller_id', currentUser.id);
+            const { data: purchases } = await supabase.from('orders').select('*, products(name)').eq('buyer_id', currentUser.id);
+
+            document.getElementById('sales-table').querySelector('tbody').innerHTML = sales?.map(s => `
+                <tr><td>${s.products?.name || 'Item'}</td><td>₱${s.amount}</td><td>${s.status}</td></tr>
+            `).join('') || '<tr><td colspan="3">No sales yet</td></tr>';
+
+            document.getElementById('purchases-table').querySelector('tbody').innerHTML = purchases?.map(p => `
+                <tr><td>${p.products?.name || 'Item'}</td><td>₱${p.amount}</td><td>${p.status}</td></tr>
+            `).join('') || '<tr><td colspan="3">No purchases yet</td></tr>';
+        }
+
+        async function loadReviews() {
+            const list = document.getElementById('reviews-list');
+            const { data: reviews } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+
+            if (!reviews || reviews.length === 0) {
+                list.innerHTML = '<p>No reviews yet.</p>';
+                return;
+            }
+
+            list.innerHTML = reviews.map(r => `
+                <div class="review-card">
+                    <strong>${r.reviewer_name}</strong> <span class="stars">${'★'.repeat(r.rating)}</span>
+                    <p style="margin-top:4px;">${r.comment}</p>
+                </div>
+            `).join('');
+        }
+
+        async function handleReviewSubmit(e) {
+            e.preventDefault();
+            if (!currentUser) return alert('Log in to leave a review.');
+
+            const product_id = document.getElementById('rev-product-id').value;
+            const rating = parseInt(document.getElementById('rev-rating').value);
+            const comment = document.getElementById('rev-comment').value;
+
+            const { error } = await supabase.from('reviews').insert([{
+                product_id, user_id: currentUser.id, reviewer_name: currentUser.email.split('@')[0], rating, comment
+            }]);
+
+            if (error) alert(error.message);
+            else {
+                alert('Review submitted!');
+                loadReviews();
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
